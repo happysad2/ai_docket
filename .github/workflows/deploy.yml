@@ -1,11 +1,11 @@
 name: Deploy to S3
 
-# Trigger this action on push to the master branch
+# Trigger this action on push to the main or develop branches
 on:
   push:
     branches:
       - main
-      - develop    # Add the name of the branch you are working on
+      - develop
   pull_request:
     branches:
       - main
@@ -24,6 +24,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install awscli -y
 
+    # Set up Google Cloud credentials from secret
+    - name: Set up Google Cloud credentials
+      run: echo "${{ secrets.GOOGLE_CREDENTIALS }}" > $HOME/gcloud.json
+
+    # Set up the environment variable for credentials path
+    - name: Export credentials path
+      run: echo "CREDENTIALS_PATH=$HOME/gcloud.json" >> $GITHUB_ENV
+
     - name: Sync files to S3
       run: |
         aws s3 sync ./ s3://$AWS_S3_BUCKET --delete
@@ -31,3 +39,4 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+        CREDENTIALS_PATH: ${{ env.CREDENTIALS_PATH }}
