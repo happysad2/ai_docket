@@ -5,6 +5,11 @@ on:
   push:
     branches:
       - main
+      - develop    # Add the name of the branch you are working on
+  pull_request:
+    branches:
+      - main
+      - develop
 
 jobs:
   deploy:
