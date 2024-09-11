@@ -3,6 +3,7 @@ const multer = require('multer');
 const tesseract = require('tesseract.js');
 const path = require('path');
 const fs = require('fs');
+const { appendToSheet } = require('./googleSheets'); // Import the Google Sheets functionality
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -18,16 +19,19 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     // Check if the uploaded file is an image (optional check)
     const fileExt = path.extname(req.file.originalname).toLowerCase();
     const allowedExtensions = ['.png', '.jpg', '.jpeg', '.tiff'];
-    
+
     if (!allowedExtensions.includes(fileExt)) {
       return res.status(400).json({ message: 'Only image files are supported' });
     }
 
     // Use Tesseract for OCR on the uploaded image
     tesseract.recognize(filePath, 'eng', { logger: m => console.log(m) })
-      .then(({ data: { text } }) => {
-        // Send back the extracted text
+      .then(async ({ data: { text } }) => {
+        // Send back the extracted text as a response
         res.json({ message: 'File processed successfully', text: text });
+
+        // Send the extracted text to Google Sheets
+        await appendToSheet(text);
 
         // Optionally, delete the file after processing
         fs.unlink(filePath, (err) => {
