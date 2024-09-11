@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:,">
+  <title>PNG Upload</title>
+  <style>
+    .dropzone {
+      width: 100%;
+      max-width: 500px;
+      height: 200px;
+      border: 2px dashed #cccccc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px auto;
+      color: #999999;
+      font-size: 18px;
+    }
+    .dropzone.dragover {
+      border-color: #000000;
+      color: #000000;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="dropzone" class="dropzone">
+    Drag and drop an image here.
+  </div>
+
+  <button id="uploadButton">Upload PNG</button>
+  <p id="status"></p>
+
+  <script>
+    // Get the elements from the DOM
+    const dropzone = document.getElementById('dropzone');
+    const uploadButton = document.getElementById('uploadButton');
+    const status = document.getElementById('status');
+    let fileToUpload = null;
+
+    // Handle drag & drop events
+    dropzone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dropzone.classList.remove('dragover');
+      const files = event.dataTransfer.files;
+
+      if (files.length && files[0].type === 'image/png') {
+        fileToUpload = files[0];
+        dropzone.innerHTML = `Selected file: ${fileToUpload.name}`;
+      } else {
+        dropzone.innerHTML = 'Please upload a PNG file.';
+        fileToUpload = null;
+      }
+    });
+
+    // Handle manual click file input
+    dropzone.addEventListener('click', () => {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.png';
+      fileInput.click();
+
+      fileInput.addEventListener('change', (event) => {
+        const files = event.target.files;
+
+        if (files.length && files[0].type === 'image/png') {
+          fileToUpload = files[0];
+          dropzone.innerHTML = `Selected file: ${fileToUpload.name}`;
+        } else {
+          dropzone.innerHTML = 'Please upload a PNG file.';
+          fileToUpload = null;
+        }
+      });
+    });
+
+    // Upload button handler
+    uploadButton.addEventListener('click', () => {
+      if (fileToUpload) {
+        const formData = new FormData();
+        formData.append('file', fileToUpload);
+
+        fetch('/upload', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Display the extracted text from the image in the 'status' paragraph
+          if (data.text) {
+            status.innerHTML = 'Extracted text: ' + data.text;
+          } else {
+            status.innerHTML = 'File uploaded, but no text was extracted.';
+          }
+        })
+        .catch(error => {
+          status.innerHTML = 'An error occurred during the upload.';
+          console.error('Error:', error);
+        });
+      } else {
+        status.innerHTML = 'No file selected.';
+      }
+    });
+  </script>
+
+</body>
+</html>
