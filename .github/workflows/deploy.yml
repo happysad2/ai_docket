@@ -40,12 +40,6 @@ jobs:
       - name: Set environment variables
         run: echo "CREDENTIALS_PATH=$HOME/gcloud.json" >> $GITHUB_ENV
 
-      # Verify AWS S3 Bucket environment variable
-      - name: Verify AWS S3 Bucket
-        run: echo "AWS S3 Bucket: ${{ secrets.AWS_S3_BUCKET }}"
-        env:
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-
       # Sync files to S3 bucket
       - name: Sync files to S3
         run: aws s3 sync ./ s3://$AWS_S3_BUCKET --delete
