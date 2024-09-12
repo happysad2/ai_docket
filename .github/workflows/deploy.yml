@@ -1,6 +1,6 @@
 name: Deploy to S3
 
-# Trigger this action on push to the main or develop branches
+# Trigger the action on push or pull request to main or develop branches
 on:
   push:
     branches:
@@ -16,37 +16,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v2
+      # Step to check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    # AWS CLI installation and setup
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: 'ap-southeast-2' # Change to your desired region
+      # Step to configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'ap-southeast-2'  # Specify your AWS region
 
-    # Google Cloud authentication and setup
-    - name: Set up Google Cloud credentials
-      run: |
-        echo "${{ secrets.GOOGLE_CREDENTIALS }}" > $HOME/gcloud.json && \
-        gcloud auth activate-service-account --key-file=$HOME/gcloud.json
-      env:
-        GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
+      # Step to set up Google Cloud credentials
+      - name: Configure Google Cloud credentials
+        run: |
+          echo "${{ secrets.GOOGLE_CREDENTIALS }}" > $HOME/gcloud.json
+          gcloud auth activate-service-account --key-file=$HOME/gcloud.json
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
 
-    - name: Set environment variables
-      run: echo "CREDENTIALS_PATH=$HOME/gcloud.json" >> $GITHUB_ENV
+      # Set environment variables
+      - name: Set environment variables
+        run: echo "CREDENTIALS_PATH=$HOME/gcloud.json" >> $GITHUB_ENV
 
+      # Verify AWS S3 Bucket environment variable
+      - name: Verify AWS S3 Bucket
+        run: echo "AWS S3 Bucket: $AWS_S3_BUCKET"
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
 
-    - name: Verify AWS S3 Bucket Environment Variable
-      run: echo "AWS S3 Bucket: $AWS_S3_BUCKET"
-      env:
-        AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-
-    # Sync files to S3 bucket
-    - name: Sync files to S3
-      run: aws s3 sync ./ s3://$AWS_S3_BUCKET --delete
-      env:
-        AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-        CREDENTIALS_PATH: ${{ env.CREDENTIALS_PATH }}
+      # Sync files to S3 bucket
+      - name: Sync files to S3
+        run: aws s3 sync ./ s3://$AWS_S3_BUCKET --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          CREDENTIALS_PATH: ${{ env.CREDENTIALS_PATH }}
