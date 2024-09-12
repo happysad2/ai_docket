@@ -3,7 +3,7 @@ const multer = require('multer');
 const tesseract = require('tesseract.js');
 const path = require('path');
 const fs = require('fs');
-const { appendToSheet } = require('./googleSheets'); // Import the Google Sheets functionality
+// const { appendToSheet } = require('./googleSheets'); 
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -31,7 +31,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         res.json({ message: 'File processed successfully', text: text });
 
         // Send the extracted text to Google Sheets
-        await appendToSheet(text);
+        // await appendToSheet(text);
 
         // Optionally, delete the file after processing
         fs.unlink(filePath, (err) => {
