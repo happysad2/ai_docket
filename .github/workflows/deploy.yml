@@ -19,24 +19,33 @@ jobs:
     - name: Checkout the repository
       uses: actions/checkout@v2
 
+    # AWS CLI installation and setup
     - name: Install AWS CLI
       run: |
         sudo apt-get update
         sudo apt-get install awscli -y
 
-    # Set up Google Cloud credentials from secret
-    - name: Set up Google Cloud credentials
-      run: echo "${{ secrets.GOOGLE_CREDENTIALS }}" > $HOME/gcloud.json
-
-    # Set up the environment variable for credentials path
-    - name: Export credentials path
-      run: echo "CREDENTIALS_PATH=$HOME/gcloud.json" >> $GITHUB_ENV
-
-    - name: Sync files to S3
-      run: |
-        aws s3 sync ./ s3://$AWS_S3_BUCKET --delete
+    - name: Configure AWS credentials
+      run: aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} && \
+           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    # Google Cloud authentication and setup
+    - name: Set up Google Cloud credentials
+      run: |
+        echo "${{ secrets.GOOGLE_CREDENTIALS }}" > $HOME/gcloud.json && \
+        gcloud auth activate-service-account --key-file=$HOME/gcloud.json
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
+
+    - name: Set environment variables
+      run: echo "CREDENTIALS_PATH=$HOME/gcloud.json" >> $GITHUB_ENV
+
+    # Sync files to S3 bucket
+    - name: Sync files to S3
+      run: aws s3 sync ./ s3://$AWS_S3_BUCKET --delete
+      env:
         AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
         CREDENTIALS_PATH: ${{ env.CREDENTIALS_PATH }}
