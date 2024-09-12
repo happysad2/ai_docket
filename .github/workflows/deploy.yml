@@ -42,7 +42,7 @@ jobs:
 
       # Verify AWS S3 Bucket environment variable
       - name: Verify AWS S3 Bucket
-        run: echo "AWS S3 Bucket: $AWS_S3_BUCKET"
+        run: echo "AWS S3 Bucket: ${{ secrets.AWS_S3_BUCKET }}"
         env:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
 
