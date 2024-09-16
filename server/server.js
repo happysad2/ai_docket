@@ -3,13 +3,30 @@ const multer = require('multer');
 const tesseract = require('tesseract.js');
 const path = require('path');
 const fs = require('fs');
-// const { appendToSheet } = require('./googleSheets'); 
+const serverless = require('serverless-http');
+const mkdirp = require('mkdirp');
+const cors = require('cors');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
 
-// Serve the front-end from the 'public' folder
-app.use(express.static(path.join(__dirname, '../public')));
+// Use /tmp/uploads for file storage (Lambda can only write to /tmp)
+const upload = multer({
+  dest: '/tmp/uploads/'
+});
+
+// Ensure the /tmp/uploads directory exists
+mkdirp.sync('/tmp/uploads');
+
+// Enable CORS for all routes or specify origin(s)
+app.use(cors({
+  origin: 'https://imagescanai.s3.ap-southeast-2.amazonaws.com',  // Replace with your front-end origin
+  credentials: true, // If you need to support cookies or credentials
+}));
+
+// Serve the front-end (optional for Lambda; remove if serving from S3)
+app.get('/', (req, res) => {
+  res.send('API is running');
+});
 
 // Handle image upload and OCR
 app.post('/upload', upload.single('file'), async (req, res) => {
@@ -26,29 +43,24 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
     // Use Tesseract for OCR on the uploaded image
     tesseract.recognize(filePath, 'eng', { logger: m => console.log(m) })
-      .then(async ({ data: { text } }) => {
+      .then(({ data: { text } }) => {
         // Send back the extracted text as a response
         res.json({ message: 'File processed successfully', text: text });
 
-        // Send the extracted text to Google Sheets
-        // await appendToSheet(text);
-
-        // Optionally, delete the file after processing
+        // Delete the file after processing
         fs.unlink(filePath, (err) => {
           if (err) console.error('Error deleting file:', err);
         });
       })
       .catch(err => {
         console.error('Error during OCR:', err);
-        res.status(500).json({ message: 'Error during processing' });
+        res.status(500).json({ message: 'Error during processing', error: err.message });
       });
   } catch (err) {
     console.error('Error handling the image:', err);
-    res.status(500).json({ message: 'Error processing file' });
+    res.status(500).json({ message: 'Error processing file', error: err.message });
   }
 });
 
-// Start the server
-app.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000');
-});
+// Export the handler for AWS Lambda
+module.exports.handler = serverless(app);

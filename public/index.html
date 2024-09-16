@@ -90,9 +90,13 @@
         const formData = new FormData();
         formData.append('file', fileToUpload);
 
-        fetch('/upload', {
+        // Send the file to the API Gateway endpoint
+        fetch('https://wiq0qkpcz4.execute-api.ap-southeast-2.amazonaws.com/prod/post', {
           method: 'POST',
-          body: formData
+          body: formData,
+          headers: {
+            'Accept': 'application/json',
+          },
         })
         .then(response => response.json())
         .then(data => {
